@@ -1,0 +1,239 @@
+\documentclass[a4paper]{article}
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{longdivision}
+\usepackage{polynom}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{minted}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan
+    }
+
+\title{MATH 3MB3 - Final Report}
+\author{Howard Wang, Jordan Yang, Yiming Xia, Zitong Gu, Zhexi Yin}
+\date{April, 2024}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+This report provides a comprehensive analysis of predictive models of the impact of human behavior on the carbon cycle. The carbon cycle is a natural process that circulates carbon in the Earth’s atmosphere, oceans, and living organisms. Given rising human activities around diverse social topics, a significant influence from human works toward the carbonizing process was witnessed.
+
+We focused on a specific small-scale carbon cycle environment, comprising four main components: atmosphere; plants, litter, and humus. Simply, plants take in carbon from the atmosphere through their leaves. The carbon becomes part of the plant itself, in its leaves, stems, branches, and roots. When plants die, their bodies break down in the soil into litter. As these microorganisms break down plant materials, they respire,  releasing carbon dioxide into the atmosphere as a waste product. Over time, the litter is broken down by small organisms such as bacteria and fungi in decomposition. This transforms the litter into a nutrient-rich, dark material known as humus. Although humus holds carbon well, it can still break down over time, releasing carbon back into the air. To extend the duration of carbon storage, humus can be converted into a form called stable humus charcoal. This charcoal is a highly effective form of carbon storage, capable of retaining carbon for hundreds or even thousands of years. This cycle demonstrates a complete journey of carbon through our ecosystem.
+
+We investigate the carbon flow through four stages of the carbon cycle and uncover how carbon density changes under different social contexts of human activities. First, we examine tree cutting as a factor that influences carbon content. By controlling the portion of trees cut, we can analyze and compare different models to understand the impact more effectively. Furthermore, we are going to refine the existing model by adding more components such as branches, roots, etc. as well as more human-influenced activities. The enriched model will allow us to simulate the changes in carbon densities in each carbon cycle component in various environments.
+
+\section{Model}
+
+\subsection{Base Model}
+
+
+    For real-world mechanisms of the carbon cycle, when carbon enters the litter through litterfall continuously and leaves the litter via humidification, humus, and litter both respirate carbon dioxide into the atmosphere, and atmospheric carbon gets converted back into litter via plant growth. In our model, we intentionally exclude the influence of the ocean and direct human activities.
+
+    \paragraph{Scenario 1} We set up a discrete-time model in which carbon enters the litter through litterfall continuously at a constant rate, $z$, and leaves at a rate, $r_{l2h}$, proportional to the amount of litter currently in the system via humification. Let $LC_t$ be the state variable in our model that denotes the carbon density ($gC/m^2$) in the litter at time $t$. Assume that the area $A$ ($m^2$) of the system is fixed. The model is described by the following recurrence relation \begin{equation}
+        LC_{t+1} = LC_{t} + z/A  - r_{l2h} \cdot LC_{t}.
+    \end{equation}
+    
+    \paragraph{Scenario 2} Now we set up a more complicated model in which we assume that humus and litter both respirate carbon dioxide in to the atmosphere at rates proportion to the amount of each substance in the system, and that atmospheric carbon gets converted back into litter via plant growth, which produce litter at some rate proportional to the number of trees. Assume the density of trees ($m^{-2}$) in the system is fixed. The number of trees can be easily measured by the area of the system instead. We define the following \begin{itemize}
+        \item State variables \begin{itemize}
+            \item $LC_t:$ carbon density ($gC/m^2)$ in the litter at time $t$,
+            \item $HC_t:$ carbon density ($gC/m^2)$ in the humus at time $t$,
+            \item $AC_t:$ carbon density ($gC/m^2)$ in the atmosphere at time $t$,
+            \item $A_t:$ area of the system at time $t$,
+            \item $z_t:$ amount of carbon enters the litter at time $t$, measured in $gC$.
+        \end{itemize}
+        \item Parameters \begin{itemize}
+            \item $r_{l2h}:$ rate of carbon leaves from litter to humus via humification,
+            \item $r_{l2a}:$ rate of carbon leaves from litter to atmosphere via respiration,
+            \item $r_{h2a}:$ rate of carbon leaves from humus to atmosphere via respiration. 
+        \end{itemize}
+        \item Constants \begin{itemize}
+            \item $\Delta:$ area of expansion of the system each year measured in $m^2$,
+            \item $\sigma:$ amount of carbon yields in a specific terrestrial biosphere per square meter each year $(gC/m^2/yr)$.
+        \end{itemize}
+    \end{itemize} and then the model is given by \begin{align}
+        A_{t+1} &= A_t + \Delta, \\
+        z_{t+1} &= \sigma \cdot A_{t+1}, \\
+        LC_{t+1} &= LC_{t+1} + z_t/A_t - r_{l2h} \cdot  LC_t - r_{l2a} \cdot LC_t, \\
+        HC_{t+1} &= HC_{t} + r_{l2h} \cdot LC_t - r_{h2a} \cdot HC_t, \\
+        AC_{t+1} &= AC_t + r_{l2a} \cdot LC_t + r_{h2a} \cdot HC_t - z_t/A_t.
+    \end{align} and can be visualized by the following diagram. \begin{figure}[!htp]
+        \centering
+        \includegraphics[width=.6\linewidth]{base_model.png}
+        \caption{Base Model}
+    \end{figure}
+
+\subsection{Analysis of Base Model}
+
+\paragraph{Scenario 1} Let $LC_t = LC_{t+1} = LC^*$ in equation (1). Then we obtain the equilibrium point of the model is $LC^* = z/(A \cdot r_{l2h})$. In addition, since $|(LC + z/A - r_{l2h} \cdot LC)^{\prime}| = |1-r_{l2h}|$, we see that $LC^*$ is stable if $|1-r_{l2h}| < 1$. We choose a system with area $4400 m^2$ and want to model the changes of carbon density in the litter over $99999$ time periods. Also, we set two constants $z = 28.7$ and $r_{l2h} = 0.4/4400$, and the initial condition $LC_0 = 22.23/4400$. We expect that the equilibrium point is $LC^* = 69.5$, that is, the carbon density in the litter will eventually be stable at $69.5 \, (gC/m^2)$. The simulation is illustrated in Figure 2.
+
+\paragraph{Scenario 2} First we using analytic approach to determine the equilibrium points of our second base model and the stabilities of the equilibrium points. By setting $LC_{t+1} = LC_{t} = LC^*$ in Equation (4), we obtain $LC^* = \sigma/(r_{l2h} + r_{l2a})$. Then, by setting $HC_{t+1} = HC_{t} = HC^*$ and $LC_t$ in Equation (5), we obtain $HC^* = r_{l2h} \cdot LC^* / r_{h2a}$. Note that the equilibrium point for carbon density in the atmosphere exists if $r_{l2a} \cdot LC^* + r_{h2a} \cdot HC^* - \sigma = 0$ and that the carbon density in the atmosphere $AC_t$ stabilize once both carbon densities in the litter and the humus, $LC_t$ and $HC_t$, stabilize. 
+
+Let $\sigma = 0.77$, $r_{l2h} = 0.4/3610$, $r_{l2a} = 0.6/3610$, and $r_{h2a} = 0.1 \cdot 0.95 / 3610$, one can calculate the equilibrium points for the carbon density in litter and humus and can verify that $r_{l2a} \cdot LC^* + r_{h2a} \cdot HC^* - \sigma = 0$ and so the carbon density in the atmosphere $AC_t$ will stabilize (to a equilibrium point that we cannot determine analytically). The simulation is illustrated in Figure 3. 
+
+\begin{figure}[!htb]
+   \begin{minipage}{0.48\textwidth}
+     \centering
+     \includegraphics[width=.7\linewidth]{base_model_1.png}
+     \caption{Base Model Scenario 1}\label{Fig:Data1}
+   \end{minipage}\hfill
+   \begin{minipage}{0.48\textwidth}
+     \centering
+     \includegraphics[width=.7\linewidth]{base_model_2.png}
+     \caption{Base Model Scenario 2}\label{Fig:Data2}
+   \end{minipage}
+\end{figure}
+
+\subsection{Model Extension}
+Our base models demonstrates the changes of carbon densities in the three components (litter, humus, and atmosphere) under a preset ideal condition. However, in order to elaborate our model to a level that it can be used to simulate real-world scenario, we must introduce more components of the carbon cycle, e.g., plants and charcoal. In addition, we add variations to the area which would account for cutting/burning and seasonal changes. For example, cutting/burning results shrinking area and winter season frozen the growth of plants and thus frozen the natural expansion of area, in this two scenarios, we would set $\Delta$, the change in area at each time period, to a negative or zero value. Finally, we introduce the concept of land transfer, which reflects the fact that an ecosystem may loose surface area at one location, but gain at another. For example, some part of a tropical forest may convert to grassland while the forest is expanding. 
+
+As a simplification, we assume that the carbon density in the atmosphere is constant since it contains far more carbon compared to the other components in the system, this is a different assumption from the base model where we assumed that the carbon density in the atmosphere is a state variable. 
+
+The state variables, parameters, and constants for our model and the formulated model are given below 
+\begin{itemize}
+    \item State variables, parameters, and constants \begin{itemize}
+        \item $A_t:$ area of the system at time $t$ $\, (m^2)$,
+        \item $X_{1_t}:$ carbon in leaves $(gC)$,
+        \item $X_{2_t}:$ carbon in branches $(gC)$,
+        \item $X_{3_t}:$ carbon in stems $(gC)$,
+        \item $X_{4_t}:$ carbon in roots $(gC)$,
+        \item $X_{5_t}:$ carbon in litters $(gC)$,
+        \item $X_{6_t}:$ carbon in humus $(gC)$,
+        \item $X_{7_t}:$ carbon in stable humus charcoal $(gC)$,
+        \item $k_{ij}:$ rate of carbon flow from $X_i$ to $X_j$, 
+        \item $p_i:$ proportions of carbon gets allocated to leaves, branches, stems, and roots, where $i$ is from $1$ to $4$,
+        \item $\sigma:$ areal net primary productivity $(gC \, m^{-2} \, yr^{-1})$,
+        \item $z_t = \sigma \cdot A_t:$ amount of carbon enters the plants from the atmosphere via plant growth. 
+    \end{itemize}
+    \item Auxiliary function for area change $\Delta \, (m^2/yr):$
+        This function returns net areal change each year by taking the type biosphere, e.g., agricultural and tropical, is human interference considered, and current time period. The returned values of $\Delta$ used in our simulations are manually configured and can be found in the implementation section. In a specified ecosystem, $\Delta$ is treated as a constant or a parameter in the model. 
+    \item Model \begin{align}
+        A_{t+1} &= A_t + \Delta_t, \\
+        X_{1_{t+1}} &= X_{1_{t}} + p_1 \cdot \sigma A_t - k_{15}X_{1_{t}}\\
+        X_{2_{t+1}} &= X_{2_{t}} + p_2\cdot \sigma A_t - k_{25}X_{2_{t}}\\
+        X_{3_{t+1}} &= X_{3_{t}} + p_3\cdot \sigma A_t - k_{35}X_{3_{t}}\\
+        X_{4_{t+1}} &= X_{4_{t}} + p_4\cdot \sigma A_t - k_{46}X_{4_{t}}\\
+        X_{5_{t+1}} &= X_{5_{t}} + k_{15}X_{1_{t}} + k_{25}X_{2_{t}} + k_{35}X_{3_{t}} - k_{50}X_{5_{t}} - k_{56}X_{5_{t}}\\
+        X_{6_{t+1}} &= X_{6_{t}} + k_{46}X_{4_{t}} - k_{60}X_{6_{t}} - k_{67}X_{6_{t}}\\
+        X_{7_{t+1}} &= X_{7_{t}} + k_{67}X_{6_{t}} - k_{70}X_{7_{t}}
+    \end{align}
+\end{itemize}
+
+As a result, the diagram is as follows
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=.7\linewidth]{model_expansion_diagram.jpg}
+    \caption{Model Expansion}
+\end{figure}
+
+\section{Results}
+\subsection{Primary Result from the Model Expansion} 
+
+In designing our expanded model, we incorporate additional components into the base model, including leaves, branches, stems, roots and stable humus charcoal. This enhancement allows for a nuanced examination of carbon flux across each component during diverse stages of carbonization, which intricate interplay between the different forest components and their respective carbon density profiles. Thus, we aim to achieve a higher accuracy and gain a comprehensive understanding of the carbon cycle dynamics. Simulations are created based on the expanded model to focus on contrasting the change of carbon density in each component with and without human interference over time. Ultimately, it reveals the impact of human intervention on carbon dynamics and provides insightful information on diverse patterns from each component's interactions with human activities. Therefore, this analysis becomes a cornerstone, enriching the informed decision-making process for climate mitigation strategies and fostering sustainable environmental stewardship. 
+
+We simulate carbon cycle within a tropical ecosystem with human interference and without human interference. Upon scrutinizing Figure 5, which depicts an environment unaffected by human intervention, it is apparent that all the components display a consistent increase in carbon density over the observed period. In contrast, Figure 6 reveals that in the presence of human activity, all components, with the exception of charcoal, experience a pronounced surge in carbon density initially, followed by a gradual decline over time. This observation suggests that human activity contributes to a decrease in the carbon density of plant and humus over time, with the notable exception of charcoal, which does not follow this trend.
+
+\begin{figure}[!htb]
+   \begin{minipage}{0.48\textwidth}
+     \centering
+     \includegraphics[width=.7\linewidth]{tropical_no_human.png}
+     \caption{Ecosystem without Human Interference}
+   \end{minipage}\hfill
+   \begin{minipage}{0.48\textwidth}
+     \centering
+     \includegraphics[width=.7\linewidth]{tropical_with_human.png}
+     \caption{Ecosystem with Human Interference}
+   \end{minipage}
+\end{figure}
+
+As a result, it is witnessed that human intervention posed a threat in carbon dynamics by decreasing the carbon density over time, tested in different scenarios. 
+
+% It also provides insight that human activity causes more carbon density fluctuations in the tropical forest than in the agricultural area, concluding the former environment is more fragile under human interventions.
+
+\subsection{Seasonal Effects}
+
+We investigate how seasonal changes affects the carbon cycle in an agricultural ecosystem. In real world scenario, plants are seasonally harvested, which breaks the accumulation of carbon in the plants (and so litter and humus) components periodically. 
+
+In our simulation of an agricultural ecosystem with seasonal effects, we assume that plants are harvested once for each four time periods and that harvesting results the area of agricultural ecosystem reduces to zero. We also set up a contrast simulation in which seasonal effects are disabled. The simulations are illustrated in the following figures. 
+
+\begin{figure}[!htb]
+   \begin{minipage}{0.48\textwidth}
+     \centering
+     \includegraphics[width=.7\linewidth]{alg_no_season.png}
+     \caption{Ecosystem without Seasonal Effects}
+   \end{minipage}\hfill
+   \begin{minipage}{0.48\textwidth}
+     \centering
+     \includegraphics[width=.7\linewidth]{alg_season.png}
+     \caption{Ecosystem With Seconal Effects}
+   \end{minipage}
+\end{figure}
+
+We observe from Figure 7 that the he carbon density in agricultural areas without human effects reflects a relatively steady performance among the majority of components as sloping horizontally, such as roots, stems, litter. Only Humus and charcoal’s carbon density demonstrates an observable increase. With human intervention, fluctuations in carbon density are evident among all components, following a dynamic pattern of increases and decreases; however, the overarching trend is one of growth. As depicted in Figure 8, seasonal variations, particularly during winter, inhibit plant growth, directly impacting the carbon density across all components. 
+
+% \begin{itemize}
+%     \item tropical vs temporal:  In the absence of human activity, the tropical region is characterized by a lack of seasonal changes, while the temperate region exhibits distinct seasonal variations. We utilize these two areas to analyze how seasonal changes impact the growth rate of forest areas
+%     \item temporal vs algricultural: Both agricultural and temperate regions experience seasonal changes. The temperate region is defined by an absence of human activity, whereas the agricultural region is indicative of human activity. We aim to compare how human activity influences the growth rate of forest areas when seasonal changes are present 
+
+%     \item tropical vs algricultural: Both tropical and agricultural areas are influenced by human activity; however, the tropical region experiences no seasonal changes, while the agricultural region does. We aim to use these two areas to investigate how seasonal variations impact the growth rate of forests where human activity is present.
+% \end{itemize}
+
+% \subsection{Human Activities Affects}
+% \begin{itemize}
+%     \item Tropical forest: In comparison of tropical forest’s carbon density changes within the scope of tropical forest with and without human activities affects, it is evidenced that carbon density is upward growing along the time without human interference, while it is in a continuous downward sloping after passing the initial threshold with the existence of human activities. Noticeably, a significant drop in carbon density was witnessed in most of the components, except for leaves and charcoal. However, a gradual diminishing return can be observed in charcoal’s carbon trend, and leaves, the least reactive component, presenting a subtle declining trend.
+%     \item Agricultural area:agricultural simulation. As 
+
+    
+%     \item 
+% \end{itemize}
+
+\section{Discussion}
+\subsection{Summary}
+In this paper, we analyze predictive models that assess the impact of human activities on the carbon cycle. Initially, we constructed a basic model representing a simplified ecosystem composed of atmosphere, living plants, waste, and humus. To enhance accuracy and understanding of carbon cycle dynamics, we integrated additional components such as leaves, branches, stems, roots, and charcoal for humus stabilization. We also incorporated three different terrains into our simulations to observe carbon content evolution over many years under varied environmental conditions. These simulations provide insights into the disruption of local carbon cycles and sequestration by human activities, particularly tree felling, across different landscapes.
+
+\subsection{Answer based on results}
+Our model simulates the impact of human-induced tree felling within a tropical ecosystem. Under natural conditions, carbon density in soil, humus, and the atmosphere generally remains stable or slightly increases over time. However, human interventions typically trigger an initial increase in carbon density across most components, subsequently followed by a gradual decline. Exceptionally, charcoal continues to sequester carbon consistently. Our comparative analysis of scenarios with and without human activities reveals that while tree felling initially boosts the carbon storage capacity of ecosystems, it ultimately disrupts the balance of the natural carbon cycle. Additionally, our exploration of seasonal effects shows significant impacts on carbon density during winter when plant growth is stalled.
+
+\subsection{Implications of results}
+The model's results are pivotal for understanding and managing the impacts of human activities on the carbon cycle. They underscore the importance of forests and other biomass-rich ecosystems as crucial carbon sinks, with reductions in environmental carbon primarily driven by human actions like deforestation. Potential solutions include promoting reforestation, enhancing land-use regulations, and expanding forest coverage. Moreover, as human activities compromise ecosystems' carbon storage capabilities, atmospheric carbon concentrations increase, exacerbating global warming. These findings suggest actions to maintain or enhance the carbon sequestration capacity of key ecosystems, advocating for integrated efforts in carbon governance and climate mitigation to foster positive changes in human-environment interactions
+
+\subsection{Limitations of models}
+While our models provide valuable insights, they also possess inherent limitations that might affect their real-world applicability and accuracy. The model simplify complex natural systems and might overlook intricate physical, chemical, and biological interactions within the carbon cycle. Assumptions about constants and initial environmental conditions, such as carbon stocks and transfer rates, may not hold across different climates or locations, potentially leading to discrepancies between model predictions and actual outcomes. Furthermore, our focus is primarily on deforestation, omitting other human influenced impacts like soil erosion and pollution, which also significantly affect the carbon cycle.
+
+\subsection{Further discussion}
+Reflecting on our report, it is critical to consider additional factors that can enhance our understanding of carbon flows and improve the accuracy of future iterations of models. Complex interactions within the climate system, including the water cycle, soil types, and diverse vegetation, can have a significant impact on carbon cycle dynamics. Incorporating these factors can provide a more comprehensive explanation of ecosystem behavior and improve prediction accuracy. Despite its limitations, our model can be instrumental in identifying and adopting the most advantageous scenarios for technological advancements in carbon management. Examples include the following technologies, Technological Innovation in Carbon Management: (Weber, 2010) To this end, technological advances such as carbon removal and storage systems, new reforestation tools, and soil amendments that use biochar as a means of carbon sequestration can be explored through our model. Policy Implications and Strategies (Canada, 2023): In addition, models can be used to further the conversation by focusing on translating scientific explanations into practical implementation processes. This includes measures such as developing land use plans, creating incentives for ecological conservation, and enacting laws to mitigate negative human impacts on the carbon cycle.
+    
+\pagebreak
+
+% \section*{Appendix: R Code}
+
+% \inputminted[linenos,tabsize=2,breaklines]{R}{script.R}
+
+% \pagebreak
+
+\nocite{*}
+\bibliographystyle{plain}
+\bibliography{main}
+
+\section*{Individual Contributions\footnote{In alphabetical order.}}
+\begin{itemize}
+    \item Howard Wang - Discussion 
+    \item Jordan Yang - Model and Results  
+    \item Yiming Xia - Discussion 
+    \item Zitong Gu - Model and Results, R Code
+    \item Zhexi Yin - Introduction
+\end{itemize}
+
+\end{document}
