@@ -1,4 +1,4 @@
-# MATH 3MB3 - Final Report on Mathematical Modelling
+# MATH 3MB3 Final Report - Simulating the Impacts of Human Activities on the Carbon Cycle
 
 ## Team Members
 - Howard Wang
